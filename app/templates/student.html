@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生端 - {{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body data-page="student" class="app-body app-bg">
+  <main class="shell shell-wide student-shell">
+    <header class="top-nav card">
+      <div>
+        <p class="eyebrow">Student Learning Center</p>
+        <h1>学生学习界面</h1>
+      </div>
+      <div class="top-nav-actions">
+        <a class="ghost-btn" href="/">返回首页</a>
+        <span class="badge">课程学习 + 练习 + 结果评价</span>
+      </div>
+    </header>
+
+    <section class="card card-soft">
+      <h2 class="section-title">学习入口</h2>
+      <div class="form-grid three-col">
+        <label>
+          学生姓名
+          <input id="student-name" placeholder="例如：张三" />
+        </label>
+        <label>
+          选择课程
+          <select id="student-course-select"></select>
+        </label>
+      </div>
+      <div class="button-row">
+        <button id="load-student-content-btn" type="button" class="btn btn-primary btn-large">加载课程内容</button>
+        <button id="submit-all-btn" type="button" class="btn btn-primary btn-large">提交全部答案</button>
+        <button id="load-recommendation-btn" type="button" class="btn btn-secondary btn-large">获取 AI 学习建议</button>
+      </div>
+      <div id="student-message" class="result-box status-box">就绪：请选择课程并加载学习内容</div>
+    </section>
+
+    <section class="card">
+      <div class="student-tabs" id="student-tabs">
+        <button class="student-tab-btn is-active" data-tab-target="learning">课程学习页</button>
+        <button class="student-tab-btn" data-tab-target="practice">练习题页面</button>
+        <button class="student-tab-btn" data-tab-target="result">学习结果页面</button>
+      </div>
+
+      <div class="student-tab-panel is-active" data-tab-panel="learning">
+        <h2 class="section-title">1. 课程学习页</h2>
+
+        <h3 class="sub-title">课程信息</h3>
+        <div id="student-course-box" class="result-box">请选择课程并加载</div>
+
+        <div class="learning-grid">
+          <article class="learning-card">
+            <h3>教学大纲</h3>
+            <div id="student-outline-box" class="result-box">加载课程后显示教学大纲</div>
+          </article>
+
+          <article class="learning-card">
+            <h3>知识点总结</h3>
+            <div id="student-knowledge-box" class="result-box">加载课程后显示知识点总结</div>
+          </article>
+        </div>
+
+        <article class="learning-card video-card">
+          <h3>视频播放器</h3>
+          <video id="student-video-player" controls preload="metadata" class="student-video-player"></video>
+          <div id="student-video-list" class="tag-list"></div>
+        </article>
+
+        <article class="learning-card">
+          <h3>学习进度</h3>
+          <div class="progress-row">
+            <div class="progress-track">
+              <div id="learning-progress-fill" class="progress-fill"></div>
+            </div>
+            <span id="learning-progress-text" class="progress-text">0%</span>
+          </div>
+        </article>
+      </div>
+
+      <div class="student-tab-panel" data-tab-panel="practice">
+        <h2 class="section-title">2. 练习题页面</h2>
+        <div id="student-exercise-container" class="exercise-container"></div>
+      </div>
+
+      <div class="student-tab-panel" data-tab-panel="result">
+        <h2 class="section-title">3. 学习结果页面</h2>
+        <h3 class="sub-title">得分与错题分析</h3>
+        <div id="student-result-box" class="result-box">提交后显示得分与错题分析</div>
+
+        <h3 class="sub-title">AI 学习建议</h3>
+        <div id="student-recommendation-box" class="result-box">点击“获取 AI 学习建议”后显示</div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

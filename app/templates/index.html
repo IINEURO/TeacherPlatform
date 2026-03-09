@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="app-body app-bg">
+  <div class="dashboard-shell">
+    <header class="dashboard-topbar">
+      <div class="dashboard-logo">AI Edu System</div>
+      <nav class="dashboard-switch">
+        <a class="switch-link is-active" href="/teacher">教师端</a>
+        <a class="switch-link" href="/student">学生端</a>
+      </nav>
+      <div class="dashboard-avatar">T</div>
+    </header>
+
+    <div class="dashboard-layout">
+      <aside class="dashboard-sidebar card">
+        <a href="#course-card" class="dashboard-nav-item is-active">课程管理</a>
+        <a href="#ai-stats" class="dashboard-nav-item">教学资源</a>
+        <a href="#ai-stats" class="dashboard-nav-item">AI生成内容</a>
+        <a href="#student-stats" class="dashboard-nav-item">学生表现</a>
+        <a href="#recent-activity" class="dashboard-nav-item">系统设置</a>
+      </aside>
+
+      <main class="dashboard-content">
+        <section class="card dashboard-hero">
+          <div>
+            <p class="eyebrow">AI-Assisted Education Platform</p>
+            <h1>AI 辅助教学系统 Dashboard</h1>
+            <p class="subtitle">面向比赛演示的一体化原型，覆盖教师备课、AI 内容生成、学生学习与自动评测全链路。</p>
+          </div>
+          <div class="hero-stats">
+            <article class="stat-chip">
+              <span>系统状态</span>
+              <strong>运行中</strong>
+            </article>
+            <article class="stat-chip">
+              <span>技术栈</span>
+              <strong>FastAPI + SQLite + LLM</strong>
+            </article>
+          </div>
+        </section>
+
+        <section id="course-card" class="card">
+          <h2 class="section-title">当前课程卡片</h2>
+          <div class="metrics">
+            <article class="metric-item">
+              <span>课程名称</span>
+              <strong>高一数学 - 函数基础</strong>
+            </article>
+            <article class="metric-item">
+              <span>当前进度</span>
+              <strong>6 / 12 课时</strong>
+            </article>
+            <article class="metric-item">
+              <span>资源总数</span>
+              <strong>18 份</strong>
+            </article>
+            <article class="metric-item">
+              <span>题库总量</span>
+              <strong>62 题</strong>
+            </article>
+          </div>
+        </section>
+
+        <section class="dashboard-grid">
+          <article id="ai-stats" class="card">
+            <h2 class="section-title">AI生成内容统计</h2>
+            <div class="metrics">
+              <article class="metric-item">
+                <span>教学大纲</span>
+                <strong>1</strong>
+              </article>
+              <article class="metric-item">
+                <span>核心知识点</span>
+                <strong>12</strong>
+              </article>
+              <article class="metric-item">
+                <span>补充练习题</span>
+                <strong>24</strong>
+              </article>
+            </div>
+            <div class="tag-list">
+              <span class="tag">结构化 JSON</span>
+              <span class="tag">自动入库</span>
+            </div>
+          </article>
+
+          <article id="student-stats" class="card">
+            <h2 class="section-title">学生学习数据</h2>
+            <div class="metrics">
+              <article class="metric-item">
+                <span>活跃学生</span>
+                <strong>43</strong>
+              </article>
+              <article class="metric-item">
+                <span>平均得分</span>
+                <strong>81</strong>
+              </article>
+              <article class="metric-item">
+                <span>练习完成率</span>
+                <strong>92%</strong>
+              </article>
+            </div>
+          </article>
+
+          <article id="recent-activity" class="card">
+            <h2 class="section-title">最近活动</h2>
+            <ul class="timeline compact">
+              <li>10:21 教师上传《函数图像》PPT</li>
+              <li>10:24 AI 生成教学大纲成功</li>
+              <li>10:28 新增补充练习题 5 道</li>
+              <li>10:36 学生张三完成练习，得分 84</li>
+              <li>10:40 生成个性化补练建议</li>
+            </ul>
+          </article>
+        </section>
+
+        <section class="card card-soft">
+          <h2 class="section-title">功能入口</h2>
+          <div class="entry-grid">
+            <a class="entry-card" href="/teacher">
+              <p class="entry-tag">Teacher Console</p>
+              <h3>进入教师端</h3>
+              <p>课程管理、资源上传、教学大纲与补充题生成。</p>
+              <span class="entry-link">打开工作台</span>
+            </a>
+            <a class="entry-card" href="/student">
+              <p class="entry-tag">Student Learning</p>
+              <h3>进入学生端</h3>
+              <p>学习内容查看、在线作答、自动判分与补练推荐。</p>
+              <span class="entry-link">开始学习</span>
+            </a>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

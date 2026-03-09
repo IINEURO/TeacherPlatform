@@ -1,0 +1,19 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environment
+.venv/
+venv/
+
+# Environment variables / secrets
+.env
+
+# Local database and runtime files
+data/*.db
+*.log
+
+# IDE files
+.idea/
+.vscode/
