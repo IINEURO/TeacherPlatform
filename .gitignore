@@ -12,6 +12,7 @@ venv/
 
 # Local database and runtime files
 data/*.db
+data/uploads/
 *.log
 
 # IDE files
