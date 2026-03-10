@@ -911,6 +911,56 @@ textarea {
   font-weight: 600;
 }
 
+.graph-node-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.graph-chart {
+  margin-top: 12px;
+  width: 100%;
+  min-height: 360px;
+  border: 1px solid #d7e2f4;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+
+.graph-node-card {
+  border: 1px solid #d7e2f4;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.graph-node-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #163963;
+}
+
+.graph-mastery.is-high {
+  background: #e8faef;
+  color: #1b8a4b;
+}
+
+.graph-mastery.is-mid {
+  background: #fff5df;
+  color: #9a6a00;
+}
+
+.graph-mastery.is-low {
+  background: #ffebef;
+  color: #b42344;
+}
+
+.graph-mastery.is-empty {
+  background: #eef2f8;
+  color: #58718f;
+}
+
 @media (max-width: 1024px) {
   .card-hero {
     grid-template-columns: 1fr;

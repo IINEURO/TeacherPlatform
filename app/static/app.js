@@ -61,6 +61,113 @@ function setSkeleton(element, lines = 4) {
   element.innerHTML = `<div class="skeleton-block">${rows}</div>`;
 }
 
+const graphChartInstances = {};
+
+function disposeGraphChart(containerId) {
+  const chart = graphChartInstances[containerId];
+  if (!chart) return;
+  chart.dispose();
+  delete graphChartInstances[containerId];
+}
+
+function renderKnowledgeGraphChart(containerId, payload, { showMastery = false } = {}) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  const nodes = payload.nodes || [];
+  const links = payload.links || [];
+  if (!nodes.length) {
+    disposeGraphChart(containerId);
+    container.innerHTML = '<p class="mono">暂无图谱数据可展示。</p>';
+    return;
+  }
+
+  if (typeof window.echarts === 'undefined') {
+    container.innerHTML = '<p class="mono">未检测到 ECharts，请检查网络后刷新页面。</p>';
+    return;
+  }
+
+  disposeGraphChart(containerId);
+  const chart = window.echarts.init(container);
+  graphChartInstances[containerId] = chart;
+
+  const displayNodes = nodes.map((item) => {
+    const masteryRate = typeof item.mastery_rate === 'number' ? item.mastery_rate : null;
+    const sizeByType = item.node_type === 'chapter' ? 58 : 44;
+    const extraByMastery = masteryRate === null ? 0 : Math.max(-6, Math.min(10, (masteryRate - 60) / 4));
+    const symbolSize = Math.max(34, sizeByType + extraByMastery);
+
+    return {
+      id: item.id,
+      name: item.name,
+      value: masteryRate === null ? '未评估' : `${masteryRate}%`,
+      symbolSize,
+      draggable: true,
+      itemStyle: {
+        color: item.color || '#94a3b8',
+      },
+      label: {
+        show: true,
+        color: '#1e293b',
+        fontSize: 12,
+      },
+    };
+  });
+
+  const displayLinks = links.map((item) => ({
+    source: item.source,
+    target: item.target,
+    label: {
+      show: true,
+      formatter: item.relation || '',
+      color: '#64748b',
+      fontSize: 10,
+    },
+    lineStyle: {
+      color: '#a5b4d4',
+      width: 1.2,
+    },
+  }));
+
+  chart.setOption(
+    {
+      tooltip: {
+        trigger: 'item',
+        formatter(params) {
+          if (params.dataType === 'edge') {
+            return `${params.data.source} -> ${params.data.target}`;
+          }
+          const masteryText = showMastery ? `<br/>掌握度：${params.data.value}` : '';
+          return `${params.data.name}${masteryText}`;
+        },
+      },
+      series: [
+        {
+          type: 'graph',
+          layout: 'force',
+          roam: true, // 支持缩放与拖动
+          data: displayNodes,
+          links: displayLinks,
+          force: {
+            repulsion: 340,
+            edgeLength: [90, 180],
+            gravity: 0.08,
+          },
+          lineStyle: {
+            opacity: 0.85,
+          },
+          emphasis: {
+            focus: 'adjacency',
+            scale: true,
+          },
+        },
+      ],
+      animationDuration: 500,
+    },
+    true
+  );
+}
+
 function initUiMotionFeedback() {
   document.addEventListener('click', (event) => {
     const btn = event.target.closest('.btn');
@@ -75,6 +182,10 @@ function initUiMotionFeedback() {
     card.style.animationDelay = `${Math.min(index * 35, 360)}ms`;
   });
 }
+
+window.addEventListener('resize', () => {
+  Object.values(graphChartInstances).forEach((chart) => chart.resize());
+});
 
 function formatDateTime(raw) {
   if (!raw) return '-';
@@ -148,6 +259,67 @@ function renderKnowledgePanel(payload) {
   `;
 }
 
+function renderKnowledgeGraphPanel(payload, { showMastery = false } = {}) {
+  const nodes = payload.nodes || [];
+  const links = payload.links || [];
+
+  if (!nodes.length) {
+    return '<p>当前课程暂无知识图谱数据。</p>';
+  }
+
+  const nodeMap = new Map(nodes.map((item) => [String(item.id), item.name]));
+
+  const nodeCards = nodes
+    .map((item) => {
+      const masteryText =
+        typeof item.mastery_rate === 'number' ? `${item.mastery_rate.toFixed(2)}%` : '未评估';
+      const masteryClass =
+        typeof item.mastery_rate !== 'number'
+          ? 'is-empty'
+          : item.mastery_rate >= 80
+          ? 'is-high'
+          : item.mastery_rate >= 60
+          ? 'is-mid'
+          : 'is-low';
+
+      return `
+        <article class="graph-node-card">
+          <p class="graph-node-title">${escapeHtml(item.name || '未命名节点')}</p>
+          <div class="tag-list">
+            <span class="tag">${escapeHtml(item.node_type || 'knowledge_point')}</span>
+            ${
+              showMastery
+                ? `<span class="tag graph-mastery ${masteryClass}">掌握度：${escapeHtml(masteryText)}</span>`
+                : ''
+            }
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+
+  const edgeItems = links
+    .slice(0, 18)
+    .map(
+      (item) =>
+        `<li>${escapeHtml(nodeMap.get(String(item.source)) || `#${item.source}`)} <span class="mono">--${escapeHtml(
+          item.relation || 'related_to'
+        )}--></span> ${escapeHtml(nodeMap.get(String(item.target)) || `#${item.target}`)}</li>`
+    )
+    .join('');
+
+  return `
+    <div class="metrics">
+      <article class="metric-item"><span>节点数</span><strong>${escapeHtml(nodes.length)}</strong></article>
+      <article class="metric-item"><span>关系数</span><strong>${escapeHtml(links.length)}</strong></article>
+    </div>
+    <h4>知识节点</h4>
+    <div class="graph-node-grid">${nodeCards}</div>
+    <h4>节点关系（前 18 条）</h4>
+    ${edgeItems ? `<ol class="outline-list">${edgeItems}</ol>` : '<p>暂无关系数据。</p>'}
+  `;
+}
+
 function renderExerciseBatch(payload) {
   const exercises = payload.exercises || [];
   if (!exercises.length) {
@@ -210,6 +382,11 @@ function renderLearningEvaluation(payload) {
 const teacherState = {
   courses: [],
   selectedCourseId: null,
+  aiStatus: {
+    outline: false,
+    graph: false,
+    exercises: null,
+  },
 };
 
 function getSelectedCourseId() {
@@ -228,6 +405,13 @@ function setSelectedCourseId(courseId) {
   if (evalBox) {
     evalBox.textContent = '输入学生姓名并点击“加载学习评价”后显示';
   }
+  const graphBox = document.getElementById('graph-box');
+  if (graphBox) {
+    graphBox.textContent = '点击“生成知识图谱”后显示';
+  }
+  disposeGraphChart('teacher-graph-chart');
+  teacherState.aiStatus = { outline: false, graph: false, exercises: null };
+  updateAiStat();
 }
 
 function updateTeacherCourseHeader() {
@@ -277,6 +461,7 @@ function renderTeacherCourseCards() {
       setSelectedCourseId(course.id);
       await refreshResources();
       await refreshGeneratedOutline();
+      await refreshKnowledgeGraph();
       await refreshGeneratedExercises();
     });
 
@@ -295,13 +480,19 @@ function updateResourceStat(payload) {
   el.textContent = `${count} 份资源`;
 }
 
-function updateAiStat({ outline = false, exercises = null } = {}) {
+function updateAiStat(patch = {}) {
   const el = document.getElementById('selected-course-ai-stat');
   if (!el) return;
+
+  teacherState.aiStatus = { ...teacherState.aiStatus, ...patch };
+  const { outline, graph, exercises } = teacherState.aiStatus;
 
   const parts = [];
   if (outline) {
     parts.push('大纲已生成');
+  }
+  if (graph) {
+    parts.push('图谱已生成');
   }
   if (typeof exercises === 'number') {
     parts.push(`补充题 ${exercises} 道`);
@@ -404,7 +595,33 @@ async function refreshGeneratedExercises() {
     setStatus(messageBox, `已读取 ${payload.count} 道补充练习题`, 'ok');
   } catch (error) {
     box.textContent = error.message;
-    updateAiStat({ outline: true, exercises: 0 });
+    updateAiStat({ exercises: 0 });
+    setStatus(messageBox, error.message, 'error');
+  }
+}
+
+async function refreshKnowledgeGraph() {
+  const messageBox = document.getElementById('teacher-message');
+  const box = document.getElementById('graph-box');
+  const chartId = 'teacher-graph-chart';
+  const courseId = getSelectedCourseId();
+
+  if (!courseId) {
+    setStatus(messageBox, '请先创建并选择课程', 'error');
+    return;
+  }
+
+  try {
+    setBoxLoading(box, '正在读取知识图谱...');
+    const payload = await apiFetch(`/knowledge_graph/${courseId}`);
+    box.innerHTML = renderKnowledgeGraphPanel(payload);
+    renderKnowledgeGraphChart(chartId, payload, { showMastery: false });
+    updateAiStat({ graph: true });
+    setStatus(messageBox, '已读取课程知识图谱', 'ok');
+  } catch (error) {
+    box.textContent = error.message;
+    disposeGraphChart(chartId);
+    updateAiStat({ graph: false });
     setStatus(messageBox, error.message, 'error');
   }
 }
@@ -558,6 +775,8 @@ function initTeacherPage() {
   const refreshResourcesBtn = document.getElementById('refresh-resources-btn');
   const generateOutlineBtn = document.getElementById('generate-outline-btn');
   const refreshOutlineBtn = document.getElementById('refresh-outline-btn');
+  const generateGraphBtn = document.getElementById('generate-graph-btn');
+  const refreshGraphBtn = document.getElementById('refresh-graph-btn');
   const generateExercisesBtn = document.getElementById('generate-exercises-btn');
   const refreshExercisesBtn = document.getElementById('refresh-exercises-btn');
   const loadEvaluationBtn = document.getElementById('load-evaluation-btn');
@@ -566,6 +785,8 @@ function initTeacherPage() {
   setSkeleton(document.getElementById('resource-box'), 5);
   setSkeleton(document.getElementById('outline-box'), 4);
   setSkeleton(document.getElementById('knowledge-box'), 3);
+  setSkeleton(document.getElementById('graph-box'), 4);
+  setSkeleton(document.getElementById('teacher-graph-chart'), 5);
   setSkeleton(document.getElementById('generated-exercises-box'), 5);
   setSkeleton(document.getElementById('learning-eval-box'), 4);
 
@@ -600,6 +821,7 @@ function initTeacherPage() {
 
   refreshResourcesBtn.addEventListener('click', refreshResources);
   refreshOutlineBtn.addEventListener('click', refreshGeneratedOutline);
+  refreshGraphBtn.addEventListener('click', refreshKnowledgeGraph);
   refreshExercisesBtn.addEventListener('click', refreshGeneratedExercises);
   if (loadEvaluationBtn) {
     loadEvaluationBtn.addEventListener('click', loadTeacherLearningEvaluation);
@@ -633,6 +855,31 @@ function initTeacherPage() {
     }
   });
 
+  generateGraphBtn.addEventListener('click', async () => {
+    const courseId = getSelectedCourseId();
+    const box = document.getElementById('graph-box');
+
+    if (!courseId) {
+      setStatus(messageBox, '请先选择课程', 'error');
+      return;
+    }
+
+    try {
+      setStatus(messageBox, '正在生成课程知识图谱...', 'info');
+      setBoxLoading(box, 'AI 正在构建知识图谱...');
+      await apiFetch(`/api/teacher/courses/${courseId}/generate-knowledge-graph`, {
+        method: 'POST',
+      });
+      await refreshKnowledgeGraph();
+      setStatus(messageBox, '知识图谱生成成功', 'ok');
+    } catch (error) {
+      box.textContent = error.message;
+      disposeGraphChart('teacher-graph-chart');
+      updateAiStat({ graph: false });
+      setStatus(messageBox, error.message, 'error');
+    }
+  });
+
   generateExercisesBtn.addEventListener('click', async () => {
     const courseId = getSelectedCourseId();
     const box = document.getElementById('generated-exercises-box');
@@ -661,6 +908,7 @@ function initTeacherPage() {
     .then(async () => {
       await refreshResources();
       await refreshGeneratedOutline();
+      await refreshKnowledgeGraph();
       await refreshGeneratedExercises();
     })
     .catch((error) => {
@@ -885,6 +1133,33 @@ function renderStudentKnowledgePanel(payload) {
   `;
 }
 
+async function loadStudentKnowledgeGraph() {
+  const graphBox = document.getElementById('student-graph-box');
+  const chartId = 'student-graph-chart';
+  const messageBox = document.getElementById('student-message');
+  const studentName = document.getElementById('student-name').value.trim();
+  const courseId = studentState.courseId || document.getElementById('student-course-select').value;
+
+  if (!courseId || !graphBox) return;
+
+  const params = new URLSearchParams();
+  if (studentName) {
+    params.set('student_name', studentName);
+  }
+  const query = params.toString() ? `?${params.toString()}` : '';
+
+  try {
+    setBoxLoading(graphBox, '正在加载知识图谱...');
+    const payload = await apiFetch(`/knowledge_graph/${courseId}${query}`);
+    graphBox.innerHTML = renderKnowledgeGraphPanel(payload, { showMastery: true });
+    renderKnowledgeGraphChart(chartId, payload, { showMastery: true });
+  } catch (error) {
+    graphBox.textContent = error.message;
+    disposeGraphChart(chartId);
+    setStatus(messageBox, error.message, 'error');
+  }
+}
+
 async function loadStudentLearningContent() {
   const messageBox = document.getElementById('student-message');
   const courseBox = document.getElementById('student-course-box');
@@ -909,6 +1184,7 @@ async function loadStudentLearningContent() {
       knowledgeBox.innerHTML = renderStudentKnowledgePanel(payload);
     }
 
+    await loadStudentKnowledgeGraph();
     renderVideoPanel(studentState.videos);
 
     renderStudentExercises(payload.exercises);
@@ -1059,6 +1335,7 @@ async function submitStudentAnswers() {
       }),
     });
     renderStudentResult(result);
+    await loadStudentKnowledgeGraph();
     setStatus(messageBox, `提交完成：${result.total_score}/${result.max_score}（正确率 ${result.accuracy}%）`, 'ok');
     await loadPersonalizedRecommendation();
     switchStudentTab('result');
@@ -1076,6 +1353,8 @@ function initStudentPage() {
   setSkeleton(document.getElementById('student-course-box'), 3);
   setSkeleton(document.getElementById('student-outline-box'), 4);
   setSkeleton(document.getElementById('student-knowledge-box'), 3);
+  setSkeleton(document.getElementById('student-graph-box'), 4);
+  setSkeleton(document.getElementById('student-graph-chart'), 5);
   setSkeleton(document.getElementById('student-exercise-container'), 6);
   setSkeleton(document.getElementById('student-result-box'), 4);
   setSkeleton(document.getElementById('student-recommendation-box'), 4);

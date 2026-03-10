@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.config import settings
 from app.database import Base, engine, run_teacher_migrations
-from app.routers import student, teacher
+from app.routers import knowledge_graph, student, teacher
 
 app = FastAPI(title=settings.project_name)
 
@@ -48,3 +48,4 @@ def student_page(request: Request) -> HTMLResponse:
 
 app.include_router(teacher.router)
 app.include_router(student.router)
+app.include_router(knowledge_graph.router)

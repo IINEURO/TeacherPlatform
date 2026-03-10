@@ -33,6 +33,8 @@ class Course(Base):
         cascade="all, delete-orphan",
     )
     exercises = relationship("Exercise", back_populates="course", cascade="all, delete-orphan")
+    knowledge_nodes = relationship("KnowledgeNode", back_populates="course", cascade="all, delete-orphan")
+    knowledge_edges = relationship("KnowledgeEdge", back_populates="course", cascade="all, delete-orphan")
 
 
 class Material(Base):
@@ -134,3 +136,39 @@ class LearningReport(Base):
     personalized_exercises_json = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+
+class KnowledgeNode(Base):
+    """课程知识图谱节点。"""
+
+    __tablename__ = "knowledge_nodes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False, index=True)
+    node_key = Column(String(120), nullable=False)  # 课程内唯一标识，如 CH_1 / KP_2
+    node_name = Column(String(255), nullable=False)
+    node_type = Column(String(50), nullable=False, default="knowledge_point")
+    description = Column(Text, nullable=True)
+    level = Column(Integer, nullable=False, default=1)
+    order_index = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    course = relationship("Course", back_populates="knowledge_nodes")
+
+
+class KnowledgeEdge(Base):
+    """课程知识图谱边（节点间关系）。"""
+
+    __tablename__ = "knowledge_edges"
+
+    id = Column(Integer, primary_key=True, index=True)
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=False, index=True)
+    source_node_id = Column(Integer, ForeignKey("knowledge_nodes.id"), nullable=False)
+    target_node_id = Column(Integer, ForeignKey("knowledge_nodes.id"), nullable=False)
+    relation_type = Column(String(50), nullable=False, default="related_to")
+    weight = Column(Float, nullable=False, default=1.0)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    course = relationship("Course", back_populates="knowledge_edges")
+    source_node = relationship("KnowledgeNode", foreign_keys=[source_node_id])
+    target_node = relationship("KnowledgeNode", foreign_keys=[target_node_id])

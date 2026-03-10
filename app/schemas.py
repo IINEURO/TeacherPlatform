@@ -69,6 +69,69 @@ class GeneratedOutlineOut(BaseModel):
     updated_at: datetime
 
 
+class KnowledgeNodeOut(BaseModel):
+    """知识图谱节点。"""
+
+    id: int
+    node_key: str
+    node_name: str
+    node_type: str
+    description: str | None
+    level: int
+    order_index: int
+    mastery_rate: float | None = None
+
+
+class KnowledgeEdgeOut(BaseModel):
+    """知识图谱边。"""
+
+    id: int
+    source_node_id: int
+    target_node_id: int
+    relation_type: str
+    weight: float
+    source_node_key: str
+    source_node_name: str
+    target_node_key: str
+    target_node_name: str
+
+
+class KnowledgeGraphOut(BaseModel):
+    """知识图谱响应。"""
+
+    course_id: int
+    course_title: str
+    node_count: int
+    edge_count: int
+    nodes: list[KnowledgeNodeOut]
+    edges: list[KnowledgeEdgeOut]
+
+
+class KnowledgeGraphVisualNodeOut(BaseModel):
+    """可视化节点结构。"""
+
+    id: int
+    name: str
+    mastery_rate: float | None = None
+    color: str
+    node_type: str
+
+
+class KnowledgeGraphVisualLinkOut(BaseModel):
+    """可视化连线结构。"""
+
+    source: int
+    target: int
+    relation: str
+
+
+class KnowledgeGraphVisualOut(BaseModel):
+    """ECharts 图谱接口结构。"""
+
+    nodes: list[KnowledgeGraphVisualNodeOut]
+    links: list[KnowledgeGraphVisualLinkOut]
+
+
 class SupplementExerciseOut(BaseModel):
     """补充练习题响应结构。"""
 

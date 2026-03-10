@@ -232,6 +232,97 @@ def get_or_create_student(db: Session, student_name: str) -> models.Student:
     return student
 
 
+def get_student_by_name(db: Session, student_name: str) -> models.Student | None:
+    """按姓名读取学生（只读，不创建）。"""
+
+    normalized = student_name.strip()
+    if not normalized:
+        return None
+    return db.scalar(select(models.Student).where(models.Student.name == normalized))
+
+
+def replace_knowledge_graph(
+    db: Session,
+    course_id: int,
+    nodes: list[dict],
+    edges: list[dict],
+) -> tuple[list[models.KnowledgeNode], list[models.KnowledgeEdge]]:
+    """覆盖写入课程知识图谱。"""
+
+    db.execute(delete(models.KnowledgeEdge).where(models.KnowledgeEdge.course_id == course_id))
+    db.execute(delete(models.KnowledgeNode).where(models.KnowledgeNode.course_id == course_id))
+
+    node_records: list[models.KnowledgeNode] = []
+    for item in nodes:
+        node_key = str(item.get("node_key", "")).strip()
+        node_name = str(item.get("node_name", "")).strip()
+        if not node_key or not node_name:
+            continue
+
+        node = models.KnowledgeNode(
+            course_id=course_id,
+            node_key=node_key,
+            node_name=node_name,
+            node_type=str(item.get("node_type", "knowledge_point")).strip() or "knowledge_point",
+            description=str(item.get("description", "")).strip() or None,
+            level=int(item.get("level", 1)),
+            order_index=int(item.get("order_index", 0)),
+        )
+        db.add(node)
+        node_records.append(node)
+
+    db.flush()  # 拿到节点 ID，用于边关系写入
+    node_id_by_key = {item.node_key: item.id for item in node_records}
+
+    edge_records: list[models.KnowledgeEdge] = []
+    for item in edges:
+        source_key = str(item.get("source_key", "")).strip()
+        target_key = str(item.get("target_key", "")).strip()
+        source_id = node_id_by_key.get(source_key)
+        target_id = node_id_by_key.get(target_key)
+        if not source_id or not target_id:
+            continue
+
+        edge = models.KnowledgeEdge(
+            course_id=course_id,
+            source_node_id=source_id,
+            target_node_id=target_id,
+            relation_type=str(item.get("relation_type", "related_to")).strip() or "related_to",
+            weight=float(item.get("weight", 1.0)),
+        )
+        db.add(edge)
+        edge_records.append(edge)
+
+    db.commit()
+    for item in node_records:
+        db.refresh(item)
+    for item in edge_records:
+        db.refresh(item)
+    return node_records, edge_records
+
+
+def list_knowledge_nodes(db: Session, course_id: int) -> list[models.KnowledgeNode]:
+    """读取课程知识图谱节点。"""
+
+    stmt = (
+        select(models.KnowledgeNode)
+        .where(models.KnowledgeNode.course_id == course_id)
+        .order_by(models.KnowledgeNode.level.asc(), models.KnowledgeNode.order_index.asc(), models.KnowledgeNode.id.asc())
+    )
+    return list(db.scalars(stmt))
+
+
+def list_knowledge_edges(db: Session, course_id: int) -> list[models.KnowledgeEdge]:
+    """读取课程知识图谱边。"""
+
+    stmt = (
+        select(models.KnowledgeEdge)
+        .where(models.KnowledgeEdge.course_id == course_id)
+        .order_by(models.KnowledgeEdge.id.asc())
+    )
+    return list(db.scalars(stmt))
+
+
 def create_submission(
     db: Session,
     exercise_id: int,
@@ -271,6 +362,24 @@ def list_submissions_for_student_course(
         )
         .order_by(models.Submission.created_at.desc())
     )
+    return list(db.scalars(stmt))
+
+
+def list_submissions_for_course(
+    db: Session,
+    course_id: int,
+    student_id: int | None = None,
+) -> list[models.Submission]:
+    """读取课程作答记录，可选按学生过滤。"""
+
+    stmt = (
+        select(models.Submission)
+        .join(models.Exercise, models.Submission.exercise_id == models.Exercise.id)
+        .where(models.Exercise.course_id == course_id)
+        .order_by(models.Submission.created_at.desc())
+    )
+    if student_id is not None:
+        stmt = stmt.where(models.Submission.student_id == student_id)
     return list(db.scalars(stmt))
 
 

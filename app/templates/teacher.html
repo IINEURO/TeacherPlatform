@@ -128,6 +128,8 @@
       <div class="button-row">
         <button type="button" id="generate-outline-btn" class="btn btn-primary">生成教学大纲</button>
         <button type="button" id="refresh-outline-btn" class="btn btn-secondary">刷新大纲</button>
+        <button type="button" id="generate-graph-btn" class="btn btn-primary">生成知识图谱</button>
+        <button type="button" id="refresh-graph-btn" class="btn btn-secondary">刷新图谱</button>
         <button type="button" id="generate-exercises-btn" class="btn btn-primary">生成补充练习题</button>
         <button type="button" id="refresh-exercises-btn" class="btn btn-secondary">刷新补充题</button>
       </div>
@@ -147,6 +149,15 @@
             <span>知识点总结</span>
           </summary>
           <div id="knowledge-box" class="result-box">生成大纲后自动展示知识点总结</div>
+        </details>
+
+        <details class="ai-module" open>
+          <summary class="ai-module-summary">
+            <span class="ai-icon">AI</span>
+            <span>知识图谱</span>
+          </summary>
+          <div id="graph-box" class="result-box">点击“生成知识图谱”后显示</div>
+          <div id="teacher-graph-chart" class="graph-chart"></div>
         </details>
 
         <details class="ai-module" open>
@@ -175,6 +186,7 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>
